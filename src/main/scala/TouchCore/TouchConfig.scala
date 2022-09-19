@@ -1,0 +1,5 @@
+package TouchCore
+
+trait TouchConfig {
+
+}
