@@ -3,19 +3,87 @@ package TouchCore
 import spinal.core._
 
 object rv32i {
-	case class IMM(instruction: Bits) extends Area {
-		// immediates
-		def i:Bits  =   instruction(31 downto 20)
-		def s:Bits  =   instruction(31 downto 25) ## instruction(11 downto 7)
-		def b:Bits  =   instruction(31) ## instruction(7) ## instruction(30 downto 25) ## instruction(11 downto 8)
-		def u:Bits  =   instruction(31 downto 12) ## U"x000"
-		def j:Bits  =   instruction(31) ## instruction(19 downto 12) ## instruction(20) ## instruction(30 downto 21)
+	def func7 = 31 downto 25
 
-		// sign-extend immediates
-		def i_sext:Bits =   B((19 downto 0) -> i(11)) ## i
-		def s_sext:Bits =   B((19 downto 0) -> s(11)) ## s
-		def b_sext:Bits =   B((18 downto 0) -> b(11)) ## b ## False
-		def j_sext:Bits =   B((10 downto 0) -> j(19)) ## j ## False
+	def rd = 11 downto 7
+
+	def func3 = 14 downto 12
+
+	def rs1 = 19 downto 15
+
+	def rs2 = 24 downto 20
+
+	def opcode = 6 downto 0
+	case class IMM(rvi_inst: Bits) extends Area {
+		// immediates
+		def I_type = S(rvi_inst(31 downto 20))
+		def S_type = S(12 bits,
+			(11 downto 5)->rvi_inst(31 downto 25),
+			(4 downto 0)->rvi_inst(11 downto 7))
+		def B_type = S(13 bits,
+			12->rvi_inst(31),
+			(10 downto 5)->rvi_inst(30 downto 25),
+			(4 downto 1)->rvi_inst(11 downto 8),
+			11->rvi_inst(7),
+			default->false)
+		def U_type = S(21 bits,
+			(31 downto 12)->rvi_inst(31 downto 12))
+		def J_type = S(21 bits,
+			20->rvi_inst(31),
+			(10 downto 1)-> rvi_inst(30 downto 21),
+			11->rvi_inst(20),
+			(19 downto 12)-> rvi_inst(19 downto 12),
+			default->false)
+	}
+	case class rviEncoder(c_rd:UInt=null,
+	                      c_rs1:UInt=null,
+	                      c_rs2:UInt=null,
+	                      c_imm:SInt=null,
+	                      i_func3:Bits=null,
+	                      i_func7:Bits=null,
+	                      i_opcode:Bits=null) extends Area{
+		def R_encode = B(32 bits,
+			func7->i_func7,
+			rs2->c_rs2.asBits,
+			rs1->c_rs1.asBits,
+			func3->i_func3,
+			rd->c_rd.asBits,
+			opcode->i_opcode)
+		def I_encode = B(32 bits,
+			(31 downto 20)->c_imm(11 downto 0).asBits,
+			rs1->c_rs1.asBits,
+			func3->i_func3,
+			rd->c_rd.asBits,
+			opcode->i_opcode)
+		def S_encode = B(32 bits,
+			(31 downto 25)->c_imm(11 downto 5).asBits,
+			rs2->c_rs2.asBits,
+			rs1->c_rs1.asBits,
+			func3->i_func3,
+			(11 downto 7)->c_imm(4 downto 0).asBits,
+			opcode->i_opcode)
+		def B_encode = B(32 bits,
+			31->c_imm(12),
+			(30 downto 25)->c_imm(10 downto 5).asBits,
+			rs2->c_rs2.asBits,
+			rs1->c_rs1.asBits,
+			func3->i_func3,
+			(11 downto 8)->c_imm(4 downto 1).asBits,
+			7->c_imm(11),
+			opcode->i_opcode
+		)
+		def U_encode = B(32 bits,
+			(31 downto 12)->c_imm(31 downto 12).asBits,
+			rd->c_rd.asBits,
+			opcode->i_opcode)
+		def J_encode = B(32 bits,
+			31->c_imm(20),
+			(30 downto 21)->c_imm(10 downto 1).asBits,
+			20->c_imm(11),
+			(19 downto 12)->c_imm(19 downto 12).asBits,
+			rd->c_rd.asBits,
+			opcode->i_opcode)
+		def ERR_encode = B(32 bits,default->true)
 	}
 
 	// I-type calculate instructions

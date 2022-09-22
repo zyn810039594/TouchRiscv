@@ -3,27 +3,99 @@ package TouchCore
 import spinal.core._
 
 
-object rvcInst extends SpinalEnum {
-	val ADDI4SPN = newElement("CIW")
-	val LW = newElement("CL")
-	val SW = newElement("CS")
-	val NOP, ADDI, LI, ADDI16SP, LUI, SLLI, LWSP = newElement("CI")
-	val SUB, XOR, OR, AND = newElement("CA")
-	val SRLI, SRAI, ANDI, BEQZ, BNEZ = newElement("CB")
-	val JAL, J = newElement("CJ")
-	val JR, MV, EBREAK, JALR, ADD = newElement("CR")
-	val SWSP = newElement("CSS")
-	val ERR = newElement("ERR")
-
+object rvc {
 	def op: Range.Inclusive = 1 downto 0
 
 	def func2: Range.Inclusive = 6 downto 5
 
 	def func3: Range.Inclusive = 15 downto 13
 
-	def func4: Range.Inclusive = 12 downto 12
+	def func4: Range.Inclusive = 15 downto 12
 
-	def func5: Range.Inclusive = 11 downto 10
+	case class IMM(rvc_inst: Bits) extends Area {
+		def ADDI4SPN = S(12 bits,
+			(5 downto 4) -> rvc_inst(12 downto 11),
+			(9 downto 6) -> rvc_inst(10 downto 7),
+			2 -> rvc_inst(7),
+			3 -> rvc_inst(5),
+			default -> false)
+
+		def LW = S(12 bits,
+			(5 downto 3) -> rvc_inst(12 downto 10),
+			2 -> rvc_inst(6),
+			6 -> rvc_inst(5),
+			default -> false)
+
+		def SW = LW
+
+		def ADDI = S(6 bits,
+			5 -> rvc_inst(12),
+			(4 downto 0) -> rvc_inst(6 downto 2),
+			default -> false).resize(12)
+
+		def JAL = S(12 bits, 11 -> rvc_inst(12),
+			4 -> rvc_inst(11),
+			(9 downto 8) -> rvc_inst(10 downto 9),
+			10 -> rvc_inst(8),
+			6 -> rvc_inst(7),
+			7 -> rvc_inst(6),
+			(3 downto 1) -> rvc_inst(5 downto 3),
+			5 -> rvc_inst(2),
+			default -> false).resize(21)
+
+		def LI = ADDI
+
+		def ADDI16SP = S(10 bits,
+			9 -> rvc_inst(12),
+			4 -> rvc_inst(6),
+			6 -> rvc_inst(5),
+			(8 downto 7) -> rvc_inst(4 downto 3),
+			5 -> rvc_inst(2),
+			default -> false).resize(12)
+
+		def LUI = S(18 bits,
+			17 -> rvc_inst(12),
+			(16 downto 12) -> rvc_inst(6 downto 2),
+			default -> false).resize((21))
+
+		def SRLI = S(12 bits,
+			(11 downto 5) -> B"7'b00000000",
+			(4 downto 0) -> rvc_inst(6 downto 2))
+
+		def SRAI = S(12 bits,
+			(11 downto 5) -> B"7'b01000000",
+			(4 downto 0) -> rvc_inst(6 downto 2))
+
+		def ANDI = S(6 bits,
+			5 -> rvc_inst(12),
+			(4 downto 0) -> rvc_inst(6 downto 2),
+			default -> false).resize(12)
+
+		def J = JAL
+
+		def BEQZ = S(9 bits,
+			8 -> rvc_inst(12),
+			(4 downto 3) -> rvc_inst(11 downto 10),
+			(7 downto 6) -> rvc_inst(6 downto 5),
+			(2 downto 1) -> rvc_inst(4 downto 3),
+			5 -> rvc_inst(2),
+			default -> false).resize(13)
+
+		def BNEZ = BEQZ
+
+		def SLLI = SRLI
+
+		def LWSP = S(8 bits,
+			5 -> rvc_inst(12),
+			(4 downto 2) -> rvc_inst(6 downto 4),
+			(7 downto 6) -> rvc_inst(3 downto 2),
+			default -> false)
+
+		def SWSP = S(8 bits,
+			(5 downto 2) -> rvc_inst(12 downto 9),
+			(7 downto 6) -> rvc_inst(8 downto 7),
+			default -> false).resize(12)
+	}
 
 	object CR {
 		def rd: Range.Inclusive = 11 downto 7
@@ -96,159 +168,52 @@ object rvcInst extends SpinalEnum {
 	object CJ {
 		def jump_target: Range.Inclusive = 12 downto 2
 	}
-}
 
-object rvc {
+	def ADDI4SPN = M"000-----------00"
 
-	import rvcInst._
+	def LW = M"010-----------00"
 
-	def rvcScan(cmd: Bits): Bool = cmd(1 downto 0) === B"2'b11"
+	def SW = M"110-----------00"
 
-	def rvcDecode(cmd: Bits) {
-		val result = rvcInst()
-		switch(cmd(op)) {
-			is(B"2'b00") {
-				switch(cmd(func3)) {
-					is(B"3'b000") {
-						result := ADDI4SPN
-					}
-					is(B"3'b010") {
-						result := LW
-					}
-					is(B"3'b110") {
-						result := SW
-					}
-					default {
-						result := ERR
-					}
-				}
-			}
-			is(B"2'b01") {
-				switch(cmd(func3)) {
-					is(B"3'b000") {
-						when(cmd(CI.rd) === B(0)) {
-							result := NOP
-						} otherwise {
-							result := ADDI
-						}
-					}
-					is(B"3'b001") {
-						result := JAL
-					}
-					is(B"3'b010") {
-						result := LI
-					}
-					is(B"3'b011") {
-						switch(cmd(CI.rd)) {
-							is(B(0)) {
-								result := ERR
-							}
-							is(B(2)) {
-								result := ADDI16SP
-							}
-							default {
-								result := LUI
-							}
-						}
-					}
-					is(B"3'b100") {
-						switch(cmd(func5)) {
-							is(B"2'b00") {
-								result := SRLI
-							}
-							is(B"2'b01") {
-								result := SRAI
-							}
-							is(B"2‘b10") {
-								result := ANDI
-							}
-							is(B"2'b11") {
-								switch(cmd(func2)) {
-									is(B"2'b00") {
-										result := SUB
-									}
-									is(B"2'b01") {
-										result := XOR
-									}
-									is(B"2'b10") {
-										result := OR
-									}
-									is(B"2'b11") {
-										result := AND
-									}
-								}
-							}
-						}
-					}
-					is(B"3'b101") {
-						result := J
-					}
-					is(B"3'b110") {
-						result := BEQZ
-					}
-					is(B"3'b111") {
-						result := BNEZ
-					}
-				}
-			}
-			is(B"2'b10") {
-				switch(cmd(func3)) {
-					is(B"3'b000") {
-						when(cmd(CI.rd) === B(0)) {
-							result := ERR
-						} otherwise {
-							result := SLLI
-						}
-					}
-					is(B"3'b010") {
-						when(cmd(CI.rd) === B(0)) {
-							result := ERR
-						} otherwise {
-							result := LWSP
-						}
-					}
-					is(B"3'b100") {
-						when(cmd(func4) === B(0)) {
-							switch((cmd(CR.rd) === B(0)) ## (cmd(CR.rs2) === B(0))) {
-								is(B"2'b10") {
-									result := JR
-								}
-								is(B"2'b11") {
-									result := MV
-								}
-								default {
-									result := ERR
-								}
-							}
-						} otherwise {
-							switch((cmd(CR.rd) === B(0)) ## (cmd(CR.rs2) === B(0))) {
-								is(B"2'b00") {
-									result := EBREAK
-								}
-								is(B"2'b10") {
-									result := JALR
-								}
-								is(B"2'b11") {
-									result := ADD
-								}
-								default {
-									result := ERR
-								}
-							}
-						}
-					}
-					is(B"3'b110") {
-						result := SWSP
-					}
-					default {
-						result := ERR
-					}
-				}
-			}
-			default {
-				result := ERR
-			}
-		}
-	}
+	// NOP and ADDI
+	def ADDI = M"000-----------01"
 
+	def JAL = M"001-----------01"
+
+	def LI = M"010-----------01"
+
+	// ADDI16SP and LUI
+	def ADDI16SP = M"011-----------01"
+
+	def SRLI = M"100-00--------01"
+
+	def SRAI = M"100-01--------01"
+
+	def ANDI = M"100-10--------01"
+
+	def SUB = M"100-11---00---01"
+
+	def XOR = M"100-11---01---01"
+
+	def OR = M"100-11---10---01"
+
+	def AND = M"100-11---11---01"
+
+	def J = M"101-----------01"
+
+	def BEQZ = M"110-----------01"
+
+	def BNEZ = M"111-----------01"
+
+	def SLLI = M"000-----------10"
+
+	def LWSP = M"010-----------10"
+
+	// JR and MV
+	def JR = M"1000----------10"
+
+	// EBREAK, JALR and ADD
+	def EBREAK = M"1001----------10"
+
+	def SWSP = M"110-----------10"
 }
