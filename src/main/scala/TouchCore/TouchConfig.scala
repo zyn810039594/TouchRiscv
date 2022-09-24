@@ -1,5 +1,0 @@
-package TouchCore
-
-trait TouchConfig {
-
-}
