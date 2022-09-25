@@ -1,5 +1,5 @@
 package TouchCore.Core
 
-class fetch {
+class fetch extends {
 
 }

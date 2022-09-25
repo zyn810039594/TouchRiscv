@@ -1,5 +1,5 @@
 package TouchCore.BaseType
 
 trait TouchConfig {
-	def rvc
+	def rvcEnabled: Boolean = true
 }

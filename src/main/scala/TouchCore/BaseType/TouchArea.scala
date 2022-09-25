@@ -2,6 +2,4 @@ package TouchCore.BaseType
 
 import spinal.core._
 
-class TouchArea extends Area{
-
-}
+class TouchArea extends Area with TouchConfig
