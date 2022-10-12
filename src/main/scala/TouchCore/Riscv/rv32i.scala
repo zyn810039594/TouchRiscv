@@ -4,7 +4,8 @@ import spinal.core._
 
 object rv32i {
 	import rvInst._
-
+//	def opcode_J = M"1101111"
+//	def opcode_I = M"00-0011",M"1100111",M"1110011",M"0001111"
 	//R-type calculate instructions
 	def ADD     = R_Inst(M"0000000----------000-----0110011")
 	def SUB     = R_Inst(M"0100000----------000-----0110011")
@@ -42,12 +43,12 @@ object rv32i {
 	def SW      = S_Inst(M"-----------------010-----0100011")
 
 	//B-type branch instructions
-	def BEQ     = B_Inst(M"-----------------000---0-1100011")
-	def BNE     = B_Inst(M"-----------------001---0-1100011")
-	def BLT     = B_Inst(M"-----------------100---0-1100011")
-	def BGE     = B_Inst(M"-----------------101---0-1100011")
-	def BLTU    = B_Inst(M"-----------------110---0-1100011")
-	def BGEU    = B_Inst(M"-----------------111---0-1100011")
+	def BEQ     = B_Inst(M"-----------------000-----1100011")
+	def BNE     = B_Inst(M"-----------------001-----1100011")
+	def BLT     = B_Inst(M"-----------------100-----1100011")
+	def BGE     = B_Inst(M"-----------------101-----1100011")
+	def BLTU    = B_Inst(M"-----------------110-----1100011")
+	def BGEU    = B_Inst(M"-----------------111-----1100011")
 
 	//I-type jump instructions
 	def JALR    = I_Inst(M"-----------------000-----1100111")

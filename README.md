@@ -15,8 +15,11 @@ A Tiny 2-stage/3-stage RV32E/I(C) core, based on SpinalHDL v1.7.2.It's just work
 
 ## Pipeline Design
 2-stage config:
+
 ![pip-Stage-2](doc/pic/Touch-2stage.jpg)
+
 3-stage config:
+
 ![pip-Stage-3](doc/pic/Touch-3stage.jpg)
 
 More things just developing......
