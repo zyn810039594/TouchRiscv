@@ -7,6 +7,9 @@ object rvInst extends Nameable {
 	object instType extends SpinalEnum {
 		val i_type, r_type, s_type, b_type, u_type, j_type, c_type = newElement()
 	}
+	object instPreDecodeType extends SpinalEnum{
+		val J_Type,IC_Type,IL_Type,IJ_Type,S_Type,B_Type,UL_Type,UA_Type,CSR_Type,FENCE_Type = newElement()
+	}
 
 	abstract class rvInst{
 		def apply:MaskedLiteral

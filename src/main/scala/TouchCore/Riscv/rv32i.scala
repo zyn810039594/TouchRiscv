@@ -6,6 +6,17 @@ object rv32i {
 	import rvInst._
 //	def opcode_J = M"1101111"
 //	def opcode_I = M"00-0011",M"1100111",M"1110011",M"0001111"
+	def opcode_J    = B"1101111"
+	def opcode_IC   = B"0010011"
+	def opcode_IL   = B"0000011"
+	def opcode_IJ   = B"1100111"
+	def opcode_S    = B"0100011"
+	def opcode_B    = B"1100011"
+	def opcode_UL   = B"0110111"
+	def opcode_UA   = B"0010111"
+	def opcode_CSR  = B"1110011"
+	def opcode_FENCE= B"0001111"
+
 	//R-type calculate instructions
 	def ADD     = R_Inst(M"0000000----------000-----0110011")
 	def SUB     = R_Inst(M"0100000----------000-----0110011")
